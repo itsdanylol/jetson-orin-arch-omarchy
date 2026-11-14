@@ -13,7 +13,7 @@ original posture was unsafe:
 $ ss -ltn | grep 8787
 LISTEN 0  511  *:8787  *:*          ← every interface, not loopback
 $ grep MOROS_DEV ~/.moros/server/brain.env
-MOROS_DEV=1                          ← MOROS-DEV-KEY is a valid license
+MOROS_DEV=1                          ← a dev license is loaded
 $ sudo nft list ruleset
                                      ← empty; iptables INPUT policy ACCEPT
 $ grep -n "server.listen" ~/.moros/sdk/src/server.ts
