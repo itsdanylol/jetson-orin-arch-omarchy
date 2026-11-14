@@ -39,6 +39,9 @@ the layer it lives in, and the check that proves it survived the last update.
 One week between "it boots" and "it stays booted". The middle entry is the one
 worth reading: [docs/the-libc-day.md](docs/the-libc-day.md).
 
+Every failure, in order, including the self-inflicted ones and the one still
+open: [docs/trouble.md](docs/trouble.md). Twenty-three entries, no omissions.
+
 ## The driver situation
 
 This is the reason the repo exists, and it is strange enough to deserve the
@@ -192,7 +195,8 @@ quietly turning the board back into the thing that broke it.
 
 ```text
 INTENT.md         what this machine is for, and the ten rules it runs on
-docs/             the machine, the journey, the libc day, the kernel, the method
+docs/             the machine, the journey, the trouble log, the libc day, the
+                  display path, the kernel, the rules, the method
 fixes/            one record per fix, plus INDEX.md and 000-template.md
 checks/verify.sh  every fix, asserted; exit 1 when one was reverted
 checks/native-audit.sh   does anything on this box execute as x86?
@@ -260,5 +264,6 @@ A fix without a row and a check is not a fix. It is a thing you did once.
 
 ## License
 
-MIT. Take it, break it, improve it. If you hit a failure this board has not
-recorded yet, that is worth an issue.
+GNU General Public License v3.0 or later. Take it, break it, improve it, ship it
+under the same terms. If you hit a failure this board has not recorded yet, that
+is worth an issue.
