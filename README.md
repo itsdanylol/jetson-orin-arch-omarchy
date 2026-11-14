@@ -262,6 +262,12 @@ Lift what applies and change the paths.
 
 A fix without a row and a check is not a fix. It is a thing you did once.
 
+## Related
+
+- **fancy-dual-boot**, the boot picker that came out of this machine's GRUB
+  setup: one command to switch the default entry, backed up and validated.
+  https://github.com/itsdanylol/fancy-dual-boot
+
 ## License
 
 GNU General Public License v3.0 or later. Take it, break it, improve it, ship it
