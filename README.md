@@ -1,4 +1,4 @@
-# handbuilt-jetson
+# jetson-field-notes
 
 A Jetson Orin Nano Super running Arch, Omarchy and Hyprland on NVIDIA's L4T
 kernel. Built from a bare developer kit by one person with a shell, no release
@@ -38,6 +38,8 @@ the layer it lives in, and the check that proves it survived the last update.
 
 One week between "it boots" and "it stays booted". The middle entry is the one
 worth reading: [docs/the-libc-day.md](docs/the-libc-day.md).
+
+The boot menu, line by line: [docs/the-boot-menu.md](docs/the-boot-menu.md).
 
 Every failure, in order, including the self-inflicted ones and the one still
 open: [docs/trouble.md](docs/trouble.md). Twenty-three entries, no omissions.
@@ -195,8 +197,8 @@ quietly turning the board back into the thing that broke it.
 
 ```text
 INTENT.md         what this machine is for, and the ten rules it runs on
-docs/             the machine, the journey, the trouble log, the libc day, the
-                  display path, the kernel, the rules, the method
+docs/             the machine, the journey, the trouble log, the boot menu, the
+                  libc day, the display path, the kernel, the rules, the method
 fixes/            one record per fix, plus INDEX.md and 000-template.md
 checks/verify.sh  every fix, asserted; exit 1 when one was reverted
 checks/native-audit.sh   does anything on this box execute as x86?
