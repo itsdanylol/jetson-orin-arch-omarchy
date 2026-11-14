@@ -1,0 +1,105 @@
+#!/bin/bash
+# jetson-kernel-guard — keeps package updates from replacing the transplanted
+# L4T kernel on this Jetson with Arch ARM's mainline linux-aarch64, and keeps
+# the initramfs pinned to the kernel that actually boots.
+#
+#   --snapshot   copy the live kernel/initramfs/preset into /var/backups
+#   --verify     assert the boot chain is still the L4T kernel, repair if not
+#
+# Installed at /usr/local/bin/jetson-kernel-guard and called by the pacman
+# hooks 94-jetson-kernel-snapshot.hook / 95-jetson-kernel-guard.hook.
+
+set -euo pipefail
+
+KVER=6.8.12-1021-tegra
+GOLD=/var/backups/jetson-kernel/golden
+PRESET=/etc/mkinitcpio.d/linux-aarch64.preset
+IMAGE=/boot/Image
+INITRD=/boot/initramfs-linux.img
+EXPORT_DIR=/opt/omarchy/boot
+
+kernel_ver() {
+  local v
+  v=$(strings -a "$1" 2>/dev/null | grep -m1 '^Linux version' || true)
+  printf '%s' "${v#Linux version }" | cut -d' ' -f1
+}
+
+snapshot() {
+  local stamp dir
+  stamp=$(date +%Y%m%d-%H%M%S)
+  dir=/var/backups/jetson-kernel/"$stamp"
+  install -d -m 700 "$dir"
+  cp -a --reflink=auto "$IMAGE" "$dir/Image" 2>/dev/null || cp -a "$IMAGE" "$dir/Image"
+  cp -a --reflink=auto "$INITRD" "$dir/initramfs-linux.img" 2>/dev/null ||
+    cp -a "$INITRD" "$dir/initramfs-linux.img"
+  cp -a "$PRESET" "$dir/linux-aarch64.preset"
+  echo "jetson-kernel-guard: snapshot -> $dir"
+
+  # keep the five most recent, never touch golden/
+  find /var/backups/jetson-kernel -maxdepth 1 -type d -name '20*' |
+    sort | head -n -5 | xargs -r rm -rf
+}
+
+verify() {
+  local rebuild=0 cur list
+
+  export_one() {
+    local src=$1 name=$2
+    if ! cmp -s "$src" "$EXPORT_DIR/$name"; then
+      install -m 644 "$src" "$EXPORT_DIR/.$name.tmp"
+      mv -f "$EXPORT_DIR/.$name.tmp" "$EXPORT_DIR/$name"
+      echo "jetson-kernel-guard: re-exported $name to $EXPORT_DIR" >&2
+    fi
+  }
+
+  cur=$(kernel_ver "$IMAGE")
+  if [[ $cur != "$KVER" ]]; then
+    echo "jetson-kernel-guard: /boot/Image is '${cur:-unreadable}', expected $KVER" >&2
+    if [[ -f $GOLD/Image ]]; then
+      install -m 644 "$GOLD/Image" "$IMAGE"
+      echo "jetson-kernel-guard: restored the L4T kernel from $GOLD" >&2
+      rebuild=1
+    else
+      echo "jetson-kernel-guard: FATAL: no golden kernel at $GOLD/Image" >&2
+      return 1
+    fi
+  fi
+
+  if ! grep -qE "^ALL_kver=\"?${KVER}\"?" "$PRESET"; then
+    echo "jetson-kernel-guard: re-pinning ALL_kver in $PRESET" >&2
+    sed -i "s|^ALL_kver=.*|ALL_kver=\"$KVER\" #jetson-omarchy: pinned by jetson-kernel-guard|" "$PRESET"
+    rebuild=1
+  fi
+
+  if ((rebuild)); then
+    mkinitcpio -P
+  fi
+
+  list=$(lsinitcpio "$INITRD" 2>/dev/null || true)
+  if [[ $list != *"$KVER"* ]]; then
+    echo "jetson-kernel-guard: initramfs carries no $KVER modules — rebuilding" >&2
+    mkinitcpio -P
+    list=$(lsinitcpio "$INITRD" 2>/dev/null || true)
+    if [[ $list != *"$KVER"* ]]; then
+      echo "jetson-kernel-guard: FATAL: initramfs still does not match $KVER" >&2
+      return 1
+    fi
+  fi
+
+  # GRUB reads the host-side copies, not the ones inside the image
+  if [[ -d $EXPORT_DIR ]]; then
+    export_one "$IMAGE" Image
+    export_one "$INITRD" initramfs-linux.img
+  fi
+
+  echo "jetson-kernel-guard: ok — $KVER kernel, matching initramfs, boot export verified"
+}
+
+case ${1:-} in
+--snapshot) snapshot ;;
+--verify) verify ;;
+*)
+  echo "usage: jetson-kernel-guard --snapshot|--verify" >&2
+  exit 2
+  ;;
+esac

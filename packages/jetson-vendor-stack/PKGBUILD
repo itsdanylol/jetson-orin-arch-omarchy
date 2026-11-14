@@ -1,0 +1,44 @@
+# jetson-vendor-stack — tell pacman the truth about this board's GPU stack.
+#
+# The L4T image installs libcuda, the Vulkan ICD and the tegra EGL/GBM libraries
+# outside pacman's knowledge. Because no installed package claims the virtuals
+# they satisfy, pacman offers desktop driver packages the moment anything asks
+# for vulkan-driver — and nvidia-utils would overwrite NVIDIA's own files.
+#
+# This package claims only what is demonstrably true on this machine:
+#   vulkan-driver            /etc/vulkan/icd.d/nvidia_icd.json + loader
+#   libcuda.so=1             /usr/lib/aarch64-linux-gnu/libcuda.so.1
+#
+# It deliberately does NOT claim `nvidia-utils`: if something genuinely needs
+# that package, it should fail loudly (see the refuse hook) instead of being
+# silently satisfied by a lie.
+pkgname=jetson-vendor-stack
+pkgver=39.2.1
+pkgrel=1
+pkgdesc="Claims the virtual providers the NVIDIA L4T image supplies outside pacman"
+arch=('aarch64')
+url="local"
+license=('custom')
+depends=()
+provides=('vulkan-driver' 'libcuda.so=1')
+conflicts=()
+options=('!strip')
+
+package() {
+  install -dm755 "$pkgdir/usr/share/doc/$pkgname"
+  cat > "$pkgdir/usr/share/doc/$pkgname/README" <<'DOC'
+This package installs nothing that executes. It exists so pacman knows the
+NVIDIA L4T stack on this Jetson already provides:
+
+  vulkan-driver   /etc/vulkan/icd.d/nvidia_icd.json
+  libcuda.so=1    /usr/lib/aarch64-linux-gnu/libcuda.so.1
+
+Without it, `pacman -S anything-with-a-gui` offers to install nvidia-utils —
+the desktop driver package — which conflicts with the vendor files in
+/usr/bin/nvidia-*, /usr/lib/xorg/modules/drivers/nvidia_drv.so and
+/usr/share/glvnd/egl_vendor.d/10_nvidia.json and would break the GPU stack.
+
+If a package genuinely needs nvidia-utils (libnvidia-ml, nvidia-smi), that is a
+real gap on Jetson and should be solved deliberately, not by overriding files.
+DOC
+}

@@ -1,0 +1,13 @@
+# kernel rig scratch
+kernel/src/
+kernel/out/
+kernel/config.dany
+
+# pacman build staging
+packages/*/pkg/
+packages/*/src/
+
+# local noise
+*.log
+*.swp
+.DS_Store
