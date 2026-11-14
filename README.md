@@ -1,4 +1,4 @@
-# jetson-field-notes
+# jetson-orin-arch-omarchy
 
 A Jetson Orin Nano Super running Arch, Omarchy and Hyprland on NVIDIA's L4T
 kernel. Built from a bare developer kit by one person with a shell, no release
